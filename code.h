@@ -1,25 +1,28 @@
 void yyerror(char* s);
 
-struct net
+typedef struct 
 {
 	char name[100];
 	int x;
 	int y;
-};
+	int min;
+	int max;
+	int setMin;
+	int setMax;
+} net;
 
-struct elem
+typedef struct 
 {
+	char type;
 	char n[100];
-	struct net net1;
-	struct net net2;
-	float value;
+	net* net1;
+	net* net2;
+	double value;
 	char unit[100];
-};
+	int x1,y1,x2,y2;
+} elem;
 
-struct source
-{
-	char n[100];
-	struct net net1;
-	struct net net2;
-	char rest[100];
-};
+void addNets(net** e);
+void print(elem e,char i, int x, int y, int x2, int y2);
+void printlines();
+void drawline(int x, int y, int x2, int y2);
