@@ -19,6 +19,7 @@ typedef struct
 	net* net2;
 	double value;
 	char unit[100];
+	char rest[100];
 	int x1,y1,x2,y2;
 } elem;
 
