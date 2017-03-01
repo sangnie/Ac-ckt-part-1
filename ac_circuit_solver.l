@@ -125,48 +125,115 @@ SrcId (I|V)[0-9]*
 									count++;
 								}
 								int count2=0;
-								while(count2!=3)
-								{
-									if(yytext[i]==' ')
-									count2++;
-									(yylval.e).rest[count]=yytext[i];
-									i++;
-									count++;
-								}
 								int flag=0;
+								(yylval.e).rest[count]=yytext[i];
+								(yylval.e).rest[count+1]=' ';
+								count=count+2;
+								i=i+2;
+								//SETTING DC
+								(yylval.e).DC=0;
+								while(yytext[i]!=' ')
+								{
+									if(yytext[i]=='.')
+									flag=count2;
+									else
+									(yylval.e).DC=(yylval.e).DC*10+yytext[i]-'0';
+									(yylval.e).rest[count]=yytext[i];
+									count++;
+									i++;
+									count2++;
+								}
+								if(flag!=0)
+								(yylval.e).DC=(yylval.e).DC/pow(10,count2-flag-1);
 								count2=0;
-								(yylval.e).value=0;
-								while(yytext[i]!='K' && yytext[i]!='h')//or any other unit 
+								printf("DC=%f\n",(yylval.e).DC);		
+								(yylval.e).rest[count]=' ';
+								count++;
+								i++;
+								flag=0;
+								count2=0;
+								(yylval.e).amplitude=0;
+								
+								while(yytext[i]!=' ') 
 								{
 								if(yytext[i]=='.')
 								flag=count2;
 								else
-								(yylval.e).value=(yylval.e).value*10+yytext[i]-'0';
+								(yylval.e).amplitude=(yylval.e).amplitude*10+yytext[i]-'0';
 								(yylval.e).rest[count]=yytext[i];
 								count++;
 								i++;
 								count2++;
 								}
 								if(flag!=0)
-								(yylval.e).value=(yylval.e).value/pow(10,count2-flag-1);
+								(yylval.e).amplitude=(yylval.e).amplitude/pow(10,count2-flag-1);
 								count2=0;
-								printf("value=%f\n",(yylval.e).value);
+								printf("amplitude=%f\n",(yylval.e).amplitude);
+								
+								(yylval.e).rest[count]=' ';
+								count++;
+								i++;
+								flag=0;
+								count2=0;
+								(yylval.e).frequency=0;
+								while(yytext[i]!='K' && yytext[i]!='h')
+								{
+								if(yytext[i]=='.')
+								flag=count2;
+								else
+								(yylval.e).frequency=(yylval.e).frequency*10+yytext[i]-'0';
+								(yylval.e).rest[count]=yytext[i];
+								count++;
+								i++;
+								count2++;
+								}
+								if(flag!=0)
+								(yylval.e).frequency=(yylval.e).frequency/pow(10,count2-flag-1);
+								count2=0;
+								printf("frequency=%f\n",(yylval.e).frequency);
+								
 								while(yytext[i]!=' ')
 								{
 									(yylval.e).unit[count2]=yytext[i];
-									(yylval.e).unit[count]=yytext[i];
+									(yylval.e).rest[count]=yytext[i];
 									i++;
 									count2++;
 									count++;
 									
 								}
 								printf("unit=%s\n",(yylval.e).unit);
-								while(yytext[i]!='S')
+								
+								(yylval.e).rest[count]=' ';
+								count++;
+								i++;
+								flag=0;
+								count2=0;
+								(yylval.e).delay=0;
+								
+								while(yytext[i]!='S') 
+								{
+								if(yytext[i]=='.')
+								flag=count2;
+								else
+								(yylval.e).delay=(yylval.e).delay*10+yytext[i]-'0';
+								(yylval.e).rest[count]=yytext[i];
+								count++;
+								i++;
+								count2++;
+								}
+								
+								
+								if(flag!=0)
+								(yylval.e).delay=(yylval.e).delay/pow(10,count2-flag-1);
+								count2=0;
+								printf("delay=%f\n",(yylval.e).delay);
+								(yylval.e).damp=0;
+								/*while(yytext[i]!='S')
 								{
 									(yylval.e).rest[count]=yytext[i];
 									i++;
 									count++;
-								}
+								}*/
 									count--;
 									(yylval.e).rest[count+1]=' ';
 									(yylval.e).rest[count+2]='0';
