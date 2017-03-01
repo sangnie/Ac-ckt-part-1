@@ -85,7 +85,7 @@ void print(elem e, char i, int x, int y, int x2, int y2)
 	fprintf(yyout,"<svg><circle r=\"2\" cx=\"%d\" cy=\"%d\" style=\"stroke:rgb(0,0,0);stroke-width:1px\" /></svg>\n",minx,miny);
 	fprintf(yyout,"<svg><circle r=\"2\" cx=\"%d\" cy=\"%d\" style=\"stroke:rgb(0,0,0);stroke-width:1px\" /></svg>\n",maxx,maxy);
 	if(i=='v'||i=='x')
-    fprintf(yyout,"<svg><text x=\"%d\" y=\"%d\" fill=\"black\" font-size=\"10\">%s %s</text></svg>\n",minx+shift+15,miny-14,e.n,e.unit);
+    fprintf(yyout,"<svg><text x=\"%d\" y=\"%d\" fill=\"black\" font-size=\"10\">%s %s</text></svg>\n",minx+shift+15,miny-14,e.n,e.rest);
     else
     fprintf(yyout,"<svg><text x=\"%d\" y=\"%d\" fill=\"black\" font-size=\"10\">%s %g %s</text></svg>\n",minx+shift+15,miny-14,e.n,e.value,e.unit);
 
