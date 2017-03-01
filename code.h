@@ -18,6 +18,11 @@ typedef struct
 	net* net1;
 	net* net2;
 	double value;
+	double frequency;
+	double DC;
+	double amplitude;
+	double delay;
+	double damp;
 	char unit[100];
 	char rest[100];
 	int x1,y1,x2,y2;
