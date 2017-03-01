@@ -28,6 +28,11 @@ typedef struct
 	int x1,y1,x2,y2;
 } elem;
 
+typedef struct {
+	float val;
+	float jval;
+} impedance;
+
 void addNets(net** e);
 void print(elem e,char i, int x, int y, int x2, int y2);
 void printlines();
