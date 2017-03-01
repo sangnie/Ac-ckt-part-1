@@ -12,7 +12,7 @@ void yyerror(char *);
 Id ([A-Z a-z]+([0-9]*)?)+
 Net ([A-Z a-z]+([0-9]*)?)+|0
 Digit [0-9]+|[0-9]+"."[0-9]+
-Unit "FH"|"PH"|"NH"|"UH"|"MH"|"KH"|"MEGH"|"F"|"PF"|"NF"|"UF"|"MF"|"KF"|"MEGF"|"P"|"N"|"U"|"M"|"K"|"MEG"|"H"|""
+Unit "FH"|"PH"|"NH"|"UH"|"MH"|"KH"|"MEGH"|"F"|"PF"|"NF"|"UF"|"MF"|"KF"|"MEGF"|"P"|"N"|"U"|"M"|"K"|"MEG"|"H"|""|"FF"
 
 SrcId (I|V)[0-9]* 
 
