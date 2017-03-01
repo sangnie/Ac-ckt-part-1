@@ -114,22 +114,65 @@ SrcId (I|V)[0-9]*
 							int j;
 								for(j=0;j<4;j++)
 								{
-									(yylval.e).unit[count]=yytext[i];
+									(yylval.e).rest[count]=yytext[i];
 									i++;
 									count++;
 								}
+								while(yytext[i]!='(')
+								{
+									(yylval.e).rest[count]=yytext[i];
+									i++;
+									count++;
+								}
+								int count2=0;
+								while(count2!=3)
+								{
+									if(yytext[i]==' ')
+									count2++;
+									(yylval.e).rest[count]=yytext[i];
+									i++;
+									count++;
+								}
+								int flag=0;
+								count2=0;
+								(yylval.e).value=0;
+								while(yytext[i]!='K' && yytext[i]!='h')//or any other unit 
+								{
+								if(yytext[i]=='.')
+								flag=count2;
+								else
+								(yylval.e).value=(yylval.e).value*10+yytext[i]-'0';
+								(yylval.e).rest[count]=yytext[i];
+								count++;
+								i++;
+								count2++;
+								}
+								if(flag!=0)
+								(yylval.e).value=(yylval.e).value/pow(10,count2-flag-1);
+								count2=0;
+								printf("value=%f\n",(yylval.e).value);
+								while(yytext[i]!=' ')
+								{
+									(yylval.e).unit[count2]=yytext[i];
+									(yylval.e).unit[count]=yytext[i];
+									i++;
+									count2++;
+									count++;
+									
+								}
+								printf("unit=%s\n",(yylval.e).unit);
 								while(yytext[i]!='S')
 								{
-									(yylval.e).unit[count]=yytext[i];
+									(yylval.e).rest[count]=yytext[i];
 									i++;
 									count++;
 								}
 									count--;
-									(yylval.e).unit[count+1]=' ';
-									(yylval.e).unit[count+2]='0';
-									(yylval.e).unit[count+3]=' ';
-									(yylval.e).unit[count+4]=')';
-									(yylval.e).unit[count+5]='\0';
+									(yylval.e).rest[count+1]=' ';
+									(yylval.e).rest[count+2]='0';
+									(yylval.e).rest[count+3]=' ';
+									(yylval.e).rest[count+4]=')';
+									(yylval.e).rest[count+5]='\0';
 									if(yytext[i+2]==')')
 									printf("Damping factor missing, assumed to be 0\n");
 									else
@@ -144,7 +187,8 @@ SrcId (I|V)[0-9]*
 										if(x!=0)
 										printf("Error: damping factor can only be 0. Value changed to 0\n");										
 									}
-								yylval.e.value=0;
+									printf("rest=%s",(yylval.e).rest);
+								
 							if((yylval.e).n[0]=='I')
 							yylval.e.type = 'x';
 							else yylval.e.type='v';
