@@ -4,6 +4,7 @@ typedef struct
 {
 	char name[100];
 	int x;
+	int idx;
 	int y;
 	int min;
 	int max;
