@@ -79,7 +79,7 @@ SrcId (I|V)[0-9]*
 							 else printf("invalid input unit\n");
 						}
 
-(" ")*{SrcId}(" "+{Net}){2}(" ")+"SINE"(" ")+\((" "+{Digit}){3}"Khz"(" "+{Digit})"S"(" "+{Digit})?(" ")\)(" ")* {
+(" ")*{SrcId}(" "+{Net}){2}(" ")+"SINE"(" ")+\((" "+{Digit}("K")?)(" "+{Digit}){2}("K")?"hz"(" "+{Digit})"S"(" "+{Digit})?(" ")\)(" ")* {
 							int i=0,count=0;
 							while(yytext[i]!=' ')
 							{
@@ -131,8 +131,10 @@ SrcId (I|V)[0-9]*
 								count=count+2;
 								i=i+2;
 								//SETTING DC
+								//SETTING DC
 								(yylval.e).DC=0;
-								while(yytext[i]!=' ')
+								int check=0;
+								while(yytext[i]!=' ' && yytext[i]!='K')
 								{
 									if(yytext[i]=='.')
 									flag=count2;
@@ -142,11 +144,26 @@ SrcId (I|V)[0-9]*
 									count++;
 									i++;
 									count2++;
+									if(yytext[i]=='K') check=1;
 								}
 								if(flag!=0)
 								(yylval.e).DC=(yylval.e).DC/pow(10,count2-flag-1);
 								count2=0;
 								printf("DC=%f\n",(yylval.e).DC);		
+								
+								if(check==1)
+								{
+								while(yytext[i]!=' ')
+								{
+									(yylval.e).dcoffsetunit[count2]=yytext[i];
+									(yylval.e).rest[count]=yytext[i];
+									i++;
+									count2++;
+									count++;
+									
+								}}
+								else (yylval.e).dcoffsetunit[0]='0';
+								printf("dcoffsetunit=%s\n",(yylval.e).dcoffsetunit);
 								(yylval.e).rest[count]=' ';
 								count++;
 								i++;
