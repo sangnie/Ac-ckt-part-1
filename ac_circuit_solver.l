@@ -254,13 +254,17 @@ SrcId (I|V)[0-9]*
 										if(x!=0)
 										printf("Error: damping factor can only be 0. Value changed to 0\n");										
 									}
-									printf("rest=%s",(yylval.e).rest);
+									printf("rest=%s\n",(yylval.e).rest);
 								
-							if((yylval.e).n[0]=='I')
-							yylval.e.type = 'x';
-							else yylval.e.type='v';
-							return SOURCE;
-							};
+							if((yylval.e).n[0]=='I'){
+								yylval.e.type = 'x';
+								return ISRC;
+							}
+							else {
+								yylval.e.type='v';
+								return VSRC;
+							}
+						};
 
 .* { yyerror("Invalid Input");
 	}
