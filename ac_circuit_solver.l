@@ -272,7 +272,7 @@ SrcId (I|V)[0-9]*
 										printf("Error: damping factor can only be 0. Value changed to 0\n");										
 									}
 									printf("rest=%s\n",(yylval.e).rest);
-								
+									freq=(yylval.e).frequency;
 							if((yylval.e).n[0]=='I'){
 								yylval.e.type = 'x';
 								return ISRC;
