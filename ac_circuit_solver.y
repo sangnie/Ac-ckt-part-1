@@ -13,30 +13,34 @@ FILE* inp;
 elem comps[10000];
 net* nets[10000];
 int nNets[10000]={0};
-float voltage[10000][10000]={0.0};
+float coeffs[10000][10000]={0.0};
 int nSize=0, cSize=1, grounded=0;
 
 #define V_SRC 0
 #define I_SRC 1
 int sourceType;
+int mVsrc = 0;
 %}
 
 %union{
 	elem e;
 };
 
-%token RES CAP IND SOURCE 
-%type <e>exp RES CAP IND SOURCE
+%token RES CAP IND VSRC ISRC
+%type <e>exp RES CAP IND VSRC ISRC
 
 %%
 exp: RES {comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2));nSize++;}
 	|CAP {comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
 	|IND { comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
-	|SOURCE {comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType =(comps[nSize].type == 'v') ? V_SRC : I_SRC; nSize++;}
+	|VSRC { comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType = V_SRC; nSize++; mVsrc++;}
+	|ISRC { comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType = I_SRC; nSize++;}
+	
 	| exp RES {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
 	| exp CAP {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
 	| exp IND {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
-	| exp SOURCE {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType =(comps[nSize].type == 'v') ? 0 : 1; nSize++; }
+	| exp VSRC {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType= V_SRC; nSize++; mVsrc++;}
+	| exp ISRC {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType= I_SRC; nSize++;}
 	;
 %%
 
@@ -67,7 +71,7 @@ void addNets(net **n1){
 	nets[cSize]->y = 50;
 	nets[cSize]->setMin = 0;
 	nets[cSize]->max = 0;
-	nets[cSize]->idx = cSize;
+	nets[cSize]->idx = cSize-1;
 	cSize++;
 	return;
 }
@@ -167,58 +171,58 @@ void prtCmps(){
 
 void solve_matrix(){
 	// printf("yay\n");
-	int row=cSize-1,col=cSize-1;
-	int row1=cSize-1,col1=1;
-	int n=cSize-1,i,j,k,p;
+	int row=cSize-1+mVsrc,col=cSize-1+mVsrc;
+	int row1=cSize-1+mVsrc,col1=1;
+	int n=cSize-1+mVsrc,i,j,k,p;
 	float c,d,e,sum,a;
-	// float matrix[10000][10000];
+	// float coeffs[10000][10000];
 	float var[10000],b;
 	// printf("yay1\n");
 
-	float** matrix = (float**) malloc (cSize * sizeof(float*));
-	for (i=0; i<cSize; i++){
-    	matrix[i] = (float *)malloc(cSize * sizeof(float));
-    }
-
-	for(i=0;i<cSize-1;i++){
-		for(j=0;j<cSize; j++){
-			matrix[i][j] = voltage[i+1][j+1];
-			// printf("%f ", matrix[i][j]);
-		}
-		// printf("\n");
-	}
+	// float** matrix = (float**) malloc (cSize * sizeof(float*));
+	// for (i=0; i<cSize; i++){
+ //    	coeffs[i] = (float *)malloc(cSize * sizeof(float));
+ //    }
+ //    printf("\n");
+	// for(i=0;i<cSize-1;i++){
+	// 	for(j=0;j<cSize; j++){
+	// 		coeffs[i][j] = coeffs[i+1][j+1];
+	// 		printf("%f ", coeffs[i][j]);
+	// 	}
+	// 	printf("\n");
+	// }
 	// printf("yay\n");
 //Making Upper Triangular Matrix				
 	for(k=0;k<n;k++){
-		float a= matrix[k][k],temp=0;
+		float a= coeffs[k][k],temp=0;
 		int ind=k,l,m;
 		
 		// printf("yay1\n");
 		for(l=k+1;l<n;l++){
 			// printf("yay5\n");
-			if(a<fabs(matrix[l][k])){
-				a= matrix[l][k];
+			if(a<fabs(coeffs[l][k])){
+				a= coeffs[l][k];
 				ind = l;
 				// printf("yay3\n");
 			}
 			else continue;
 		
 			for(m=0;m<n+1;m++){
-				temp = matrix[k][m];
-				matrix[k][m] = matrix[ind][m];
-				matrix[ind][m] = temp;
+				temp = coeffs[k][m];
+				coeffs[k][m] = coeffs[ind][m];
+				coeffs[ind][m] = temp;
 				// printf("yay4\n");
 			}
 		}
 		// printf("yay2\n");
 		for(i=k+1;i<n;i++){
-			c = (matrix[i][k] / matrix[k][k] ) ;
+			c = (coeffs[i][k] / coeffs[k][k] ) ;
 
 			for(j=k;j<n+1;j++){
-				matrix[i][j] = matrix[i][j] -  c * matrix[k][j] ;
+				coeffs[i][j] = coeffs[i][j] -  c * coeffs[k][j] ;
 
-				if(fabs(matrix[i][j]) < 0.0000005){
-					matrix[i][j] = 0;
+				if(fabs(coeffs[i][j]) < 0.0000005){
+					coeffs[i][j] = 0;
 	            }
 			}
 		}
@@ -232,7 +236,7 @@ void solve_matrix(){
 	for(i=0;i<row;i++){
 		count = 0;
 		for(j=0;j<col +1;j++){
-			if(matrix[i][j] == 0){
+			if(coeffs[i][j] == 0){
 				count +=1;
 			}
 			else continue;
@@ -253,15 +257,15 @@ void solve_matrix(){
 	    printf("Unique Solution Exists \n");
 
 		//Back Substitution
-		var[n-1] = matrix[n-1][n] /matrix[n-1][n-1];
+		var[n-1] = coeffs[n-1][n] /coeffs[n-1][n-1];
 		for(i=0;i<n;i++){
 			sum = 0;
 			for(j=0;j<i;j++){
 				b= var[n-j-1];
-				a = matrix[n-i-1][n-j-1];
+				a = coeffs[n-i-1][n-j-1];
 				sum = sum +  a*b  ;
 			}
-			var[n-i-1] = (matrix[n-i-1][n] - sum)/ matrix[n-i-1][n-i-1] ;
+			var[n-i-1] = (coeffs[n-i-1][n] - sum)/ coeffs[n-i-1][n-i-1] ;
 		}
 
 		for(i=0;i<n;i++){
@@ -270,7 +274,7 @@ void solve_matrix(){
 		// printf("yay3\n");
 	}
 	else{printf("No Finite Solution Exists");}
-	free(matrix);
+	// free(matrix);
 }
 
 int main (int argc, char* argv[])
@@ -282,7 +286,7 @@ int main (int argc, char* argv[])
 	nets[0]->max = 0;
 	nets[0]->name[0]='0';
 	nets[0]->name[1]='\0';
-	nets[0]->idx=0;
+	nets[0]->idx=-1;
 	nNets[0] = 0;
 
 	yyout=fopen("out.svg","w");
@@ -345,49 +349,206 @@ int main (int argc, char* argv[])
 
 	// for(i=0;i<5;i++){
 	// 	for(j=0;j<5;j++){
-	// 		printf("%f ",voltage[i][j] );
+	// 		printf("%f ",coeffs[i][j] );
 	// 	}
 	// 	printf("\n");
 	// }
 
-	if(sourceType == V_SRC){
-		
-	} else {
-		for(i=0; i<nSize; i++){
-			printf("%s ", comps[i].n);
-			printf("%c ", comps[i].type);
-			printf("(%s ", comps[i].net1->name);
-			printf("%d ",comps[i].net1->x);
-			printf("%d) ",comps[i].net1->y);
-			printf("(%s ", comps[i].net2->name);
-			printf("%d ",comps[i].net2->x);
-			printf("%d) ",comps[i].net2->y);
-			printf("%g", comps[i].value);
-			printf("%s\n", comps[i].unit);
-			if(comps[i].type=='x'){
-				voltage[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
-				voltage[comps[i].net2->idx][cSize] = comps[i].amplitude;
-				continue;
-			}
-			printf("%d ",comps[i].net1->idx);
-			printf("%d ",comps[i].net2->idx );
-			printf("%f\n",comps[i].value);
-			voltage[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
-			voltage[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
+	// if(sourceType == V_SRC){
+	// 	int v_idx1,v_idx2;
 
-			voltage[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
-			voltage[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
-		}
+	// 	for(i=0; i<nSize; i++){
+	// 		// printf("%s ", comps[i].n);
+	// 		// printf("%c ", comps[i].type);
+	// 		// printf("(%s ", comps[i].net1->name);
+	// 		// printf("%d ",comps[i].net1->x);
+	// 		// printf("%d) ",comps[i].net1->y);
+	// 		// printf("(%s ", comps[i].net2->name);
+	// 		// printf("%d ",comps[i].net2->x);
+	// 		// printf("%d) ",comps[i].net2->y);
+	// 		// printf("%g", comps[i].value);
+	// 		// printf("%s\n", comps[i].unit);
+	// 		if(comps[i].type=='v'){
+	// 			coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
+	// 			coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
+	// 			continue;
+	// 		}
+	// 		printf("%d ",comps[i].net1->idx);
+	// 		printf("%d ",comps[i].net2->idx );
+	// 		printf("%f\n",comps[i].value);
+	// 		coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
+	// 		coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
 
-		for(i=1; i<cSize; i++){
-			for(j=1;j<=cSize;j++){
-				printf("%f ",voltage[i][j]);
-			}
-			printf("\n");
-		}
+	// 		coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
+	// 		coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+	// 	}
 
-	}
+	// 	for(i=0; i<cSize; i++){
+	// 		for(j=0;j<=cSize;j++){
+	// 			printf("%f ",coeffs[i][j]);
+	// 		}
+	// 		printf("\n");
+	// 	}
+	// 	solve_matrix();
+
+	// } else {
+	// 	for(i=0; i<nSize; i++){
+	// 		printf("%s ", comps[i].n);
+	// 		printf("%c ", comps[i].type);
+	// 		printf("(%s ", comps[i].net1->name);
+	// 		printf("%d ",comps[i].net1->x);
+	// 		printf("%d) ",comps[i].net1->y);
+	// 		printf("(%s ", comps[i].net2->name);
+	// 		printf("%d ",comps[i].net2->x);
+	// 		printf("%d) ",comps[i].net2->y);
+	// 		printf("%g", comps[i].value);
+	// 		printf("%s\n", comps[i].unit);
+	// 		if(comps[i].type=='x'){
+	// 			coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
+	// 			coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
+	// 			continue;
+	// 		}
+	// 		printf("%d ",comps[i].net1->idx);
+	// 		printf("%d ",comps[i].net2->idx );
+	// 		printf("%f\n",comps[i].value);
+	// 		coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
+	// 		coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
+
+	// 		coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
+	// 		coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+	// 	}
+
+	// 	for(i=0; i<cSize; i++){
+	// 		for(j=0;j<=cSize;j++){
+	// 			printf("%f ",coeffs[i][j]);
+	// 		}
+	// 		printf("\n");
+	// 	}
+	// 	solve_matrix();
+	// }
 	// printf("yay57487\n");
-	solve_matrix();
 
+	// float** matrix = (float**) malloc ((cSize - 1 + mVsrc) * sizeof(float*));
+	// for (i=0; i<(cSize - 1 + mVsrc); i++){
+ //    	coeffs[i] = (float *)malloc((cSize - 1 + mVsrc) * sizeof(float));
+ //    }
+	// for(i=0; i<cSize - 1 + mVsrc; i++){
+	// 	for(j=0;j<=cSize - 1 + mVsrc;j++){
+	// 		printf("%f ",coeffs[i][j]);
+	// 	}
+	// 	printf("\n");
+	// }
+    int mV=0;
+    printf("%d %d \n", cSize-1, mVsrc);
+	for(i=0; i<nSize; i++){
+		printf("%s ", comps[i].n);
+		printf("%c ", comps[i].type);
+		printf("(%s ", comps[i].net1->name);
+		printf("%d ",comps[i].net1->x);
+		printf("%d) ",comps[i].net1->y);
+		printf("(%s ", comps[i].net2->name);
+		printf("%d ",comps[i].net2->x);
+		printf("%d) ",comps[i].net2->y);
+		printf("%g", comps[i].value);
+		printf("%s\n", comps[i].unit);
+		// if(comps[i].type=='x'){
+		// 	coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
+		// 	coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
+		// 	continue;
+		// }
+		printf("%d ",comps[i].net1->idx);
+		printf("%d ",comps[i].net2->idx );
+		printf("%f\n",comps[i].value);
+		// coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
+		// coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
+
+		// coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
+		// coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+
+		switch(comps[i].type){
+			case 'x' :
+				if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = comps[i].amplitude;
+				if(comps[i].net2->idx != -1) coeffs[comps[i].net2->idx][cSize-1 + mVsrc] = comps[i].amplitude;
+				break;
+
+			case 'v' :
+				if(comps[i].net1->idx==-1){
+					coeffs[comps[i].net2->idx][cSize-1 + mV] += -1.0;
+					coeffs[cSize-1 + mV][comps[i].net2->idx] += -1.0;
+				} else {
+					if(comps[i].net2->idx==-1){
+						coeffs[comps[i].net1->idx][cSize-1 + mV] += 1.0;
+						coeffs[cSize-1 + mV][comps[i].net1->idx] += 1.0;
+					} else {
+						coeffs[comps[i].net1->idx][cSize-1 + mV] += 1.0;
+						coeffs[comps[i].net2->idx][cSize-1 + mV] += -1.0;
+						
+						coeffs[cSize-1 + mV][comps[i].net1->idx] += 1.0;
+						coeffs[cSize-1 + mV][comps[i].net2->idx] += -1.0;
+					}
+				}
+				// if(comps[i].net1->idx==-1){
+				// 	coeffs[comps[i].net2->idx][cSize-1 + mV] += -i;
+				// 	coeffs[cSize-1 + mV][comps[i].net2->idx] += -i;
+				// } else {
+				// 	if(comps[i].net2->idx==-1){
+				// 		coeffs[comps[i].net1->idx][cSize-1 + mV] += i;
+				// 		coeffs[cSize-1 + mV][comps[i].net1->idx] += i;
+				// 	} else {
+				// 		coeffs[comps[i].net1->idx][cSize-1 + mV] += i;
+				// 		coeffs[comps[i].net2->idx][cSize-1 + mV] += -i;
+						
+				// 		coeffs[cSize-1 + mV][comps[i].net1->idx] += i;
+				// 		coeffs[cSize-1 + mV][comps[i].net2->idx] += -i;
+				// 	}
+				// }
+				coeffs[cSize-1 + mV][cSize-1 + mVsrc] = comps[i].amplitude;
+				mV++;
+				break;
+
+			case 'r' :
+			case 'i' :
+			case 'c' :
+				if(comps[i].net1->idx==-1){
+					coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+				} else {
+					if(comps[i].net2->idx==-1){
+						coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
+					} else {
+						coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
+						coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
+						coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
+						coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+					}
+				}
+				// if(comps[i].net1->idx==-1){
+				// 	coeffs[comps[i].net2->idx][comps[i].net2->idx] += i;
+				// } else {
+				// 	if(comps[i].net2->idx==-1){
+				// 		coeffs[comps[i].net1->idx][comps[i].net1->idx] += i;
+				// 	} else {
+				// 		coeffs[comps[i].net1->idx][comps[i].net1->idx] += i;
+				// 		coeffs[comps[i].net1->idx][comps[i].net2->idx] -= i;
+				// 		coeffs[comps[i].net2->idx][comps[i].net1->idx] -= i;
+				// 		coeffs[comps[i].net2->idx][comps[i].net2->idx] += i;
+				// 	}
+				// }
+				break;
+
+		}
+	}
+
+	for(i=0; i<cSize - 1 + mVsrc; i++){
+		for(j=0;j<=cSize - 1 + mVsrc;j++){
+			printf("%f ",coeffs[i][j]);
+		}
+		printf("\n");
+	}
+	solve_matrix();
+	for(i=0; i<cSize - 1 + mVsrc; i++){
+		for(j=0;j<=cSize - 1 + mVsrc;j++){
+			printf("%f ",coeffs[i][j]);
+		}
+		printf("\n");
+	}
 }
