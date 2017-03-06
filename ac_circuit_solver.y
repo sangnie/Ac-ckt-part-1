@@ -1,5 +1,6 @@
 %{
 #include "code.h"
+ #include<complex.h>
  #include <stdio.h>
  #include <stdlib.h>
 #include <string.h>
@@ -13,7 +14,7 @@ FILE* inp;
 elem comps[10000];
 net* nets[10000];
 int nNets[10000]={0};
-float coeffs[10000][10000]={0.0};
+double complex coeffs[10000][10000]={0.0};
 int nSize=0, cSize=1, grounded=0;
 
 #define V_SRC 0
@@ -176,7 +177,7 @@ void solve_matrix(){
 	int n=cSize-1+mVsrc,i,j,k,p;
 	float c,d,e,sum,a;
 	// float coeffs[10000][10000];
-	float var[10000],b;
+	float complex var[10000],b;
 	// printf("yay1\n");
 
 	// float** matrix = (float**) malloc (cSize * sizeof(float*));
@@ -269,7 +270,7 @@ void solve_matrix(){
 		}
 
 		for(i=0;i<n;i++){
-			printf("X[%d] -> %g\n",i+1,var[i]);
+			printf("X[%d] -> %g + %gi\n",i+1,creal(var[i]),cimag(var[i]));
 		}
 		// printf("yay3\n");
 	}
@@ -441,6 +442,13 @@ int main (int argc, char* argv[])
     int mV=0;
     printf("%d %d \n", cSize-1, mVsrc);
 	for(i=0; i<nSize; i++){
+	if((comps[i].type)=='r')
+		comps[i].impedence=comps[i].value;
+		else if((comps[i].type)=='i')
+		comps[i].impedence=comps[i].value*2*3.12*freq*I;
+		else if((comps[i].type)=='c')
+		comps[i].impedence=(1/(comps[i].value*2*3.12*freq))*I;
+		
 		printf("%s ", comps[i].n);
 		printf("%c ", comps[i].type);
 		printf("(%s ", comps[i].net1->name);
@@ -513,13 +521,12 @@ int main (int argc, char* argv[])
 					coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
 				} else {
 					if(comps[i].net2->idx==-1){
-						coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
+						coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].impedence;
 					} else {
-						coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
-						coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
-						coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
-						coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
-					}
+						coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].impedence;
+						coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].impedence;
+						coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].impedence;
+						coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].impedence;
 				}
 				// if(comps[i].net1->idx==-1){
 				// 	coeffs[comps[i].net2->idx][comps[i].net2->idx] += i;
@@ -540,14 +547,14 @@ int main (int argc, char* argv[])
 
 	for(i=0; i<cSize - 1 + mVsrc; i++){
 		for(j=0;j<=cSize - 1 + mVsrc;j++){
-			printf("%f ",coeffs[i][j]);
+			printf("%f + %fi ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
 		}
 		printf("\n");
 	}
 	solve_matrix();
 	for(i=0; i<cSize - 1 + mVsrc; i++){
 		for(j=0;j<=cSize - 1 + mVsrc;j++){
-			printf("%f ",coeffs[i][j]);
+			printf("%f + %fi ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
 		}
 		printf("\n");
 	}
