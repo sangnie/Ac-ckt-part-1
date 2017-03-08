@@ -7,6 +7,9 @@
 #include <math.h>
 #define YYSTYPE elem
 void yyerror(char *);
+
+extern int nFreq;
+extern float freqs[1000];
 %}
 
 Id ([A-Z a-z]+([0-9]*)?)+
@@ -272,7 +275,26 @@ SrcId (I|V)[0-9]*
 										printf("Error: damping factor can only be 0. Value changed to 0\n");										
 									}
 									printf("rest=%s\n",(yylval.e).rest);
-									freq=(yylval.e).frequency;
+									
+									float freq=(yylval.e).frequency;
+
+									int found = 0;
+									for(i=0;i<nFreq;i++){
+										if(freqs[i] == freq){
+											found = 1;
+											break;
+										}
+									}
+									if(!found){
+										// printf("**********************************\n");
+										freqs[nFreq] = freq;
+										// printf("yay%f\n", freq);
+										// printf("%f\n", freqs[nFreq]);
+										// printf("yay%f\n", freq);
+										// printf("%f\n", freqs[nFreq]);
+										// printf("%d\n", nFreq);
+										nFreq++;
+									}
 							if((yylval.e).n[0]=='I'){
 								yylval.e.type = 'x';
 								return ISRC;
