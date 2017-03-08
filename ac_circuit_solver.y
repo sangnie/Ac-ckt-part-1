@@ -276,6 +276,50 @@ void solve_matrix(){
 			printf("X[%d] -> %g + %gi\n",i+1,creal(var[i]),cimag(var[i]));
 		}
 		// printf("yay3\n");
+		//voltages to nets
+		
+		nets[0]->voltage=0;
+		for(i=1;i<cSize;i++)
+		{
+			nets[i]->voltage=var[i-1];
+		}
+	
+		for(i=0;i<cSize;i++)
+		{
+			printf("net %s has voltage %3f + %3fi\n",nets[i]->name,creal(nets[i]->voltage),cimag(nets[i]->voltage));
+		}
+	
+		
+		//FINAL OUTPUT
+		printf("FREQ=%.3fKhz\n",freq/1000);
+		printf("VOLTAGES\n");
+		double magnitude;
+		double angle;
+		for(i=0;i<nSize;i++)
+		{
+			comps[i].voltage=(comps[i].net2->voltage)-(comps[i].net1->voltage);
+			magnitude=cabs((comps[i].net2->voltage)-(comps[i].net1->voltage));
+			angle=(180/3.14)*(atan((cimag((comps[i].net2->voltage)-(comps[i].net1->voltage)))/(creal((comps[i].net2->voltage)-(comps[i].net1->voltage)))));
+			printf("%s %.3f %.3f\n",comps[i].n,magnitude,angle);
+		}
+		printf("CURRENTS\n");
+		int count=cSize-1;
+		for(i=0;i<nSize;i++)
+		{
+			if(comps[i].type=='x' || comps[i].type=='v')
+			{
+				comps[i].current=var[count];
+				count++;		
+			}
+			else
+			{
+				comps[i].current=(comps[i].voltage)/(comps[i].impedence);
+			}
+			magnitude=cabs(comps[i].current);
+			angle=(180/3.14)*(atan((cimag(comps[i].current))/(creal(comps[i].current))));
+			printf("%s %.3f %.3f\n",comps[i].n,magnitude,angle);
+			
+		}
 	}
 	else{printf("No Finite Solution Exists\n");}
 	// free(matrix);
