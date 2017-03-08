@@ -1,6 +1,5 @@
 void yyerror(char* s);
-#include<complex.h>
-float freq;
+#include <complex.h>
 typedef struct 
 {
 	char name[100];
@@ -27,6 +26,7 @@ typedef struct
 	double damp;
 	double complex impedence;
 	char unit[100];
+	char dcoffsetunit[100];
 	char rest[100];
 	int x1,y1,x2,y2;
 } elem;
