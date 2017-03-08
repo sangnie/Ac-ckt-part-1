@@ -17,6 +17,8 @@ int nNets[10000]={0};
 double complex coeffs[10000][10000]={0.0};
 int nSize=0, cSize=1, grounded=0;
 
+float freqs[1000] = {0.0};
+int nFreq = 0;
 #define V_SRC 0
 #define I_SRC 1
 int sourceType;
@@ -175,9 +177,9 @@ void solve_matrix(){
 	int row=cSize-1+mVsrc,col=cSize-1+mVsrc;
 	int row1=cSize-1+mVsrc,col1=1;
 	int n=cSize-1+mVsrc,i,j,k,p;
-	float c,d,e,sum,a;
+	double complex c,d,e,sum,a;
 	// float coeffs[10000][10000];
-	float complex var[10000],b;
+	double complex var[10000],b;
 	// printf("yay1\n");
 
 	// float** matrix = (float**) malloc (cSize * sizeof(float*));
@@ -193,15 +195,16 @@ void solve_matrix(){
 	// 	printf("\n");
 	// }
 	// printf("yay\n");
-//Making Upper Triangular Matrix				
+	//Making Upper Triangular Matrix				
 	for(k=0;k<n;k++){
-		float a= coeffs[k][k],temp=0;
+		double complex a= coeffs[k][k],temp=0;
 		int ind=k,l,m;
 		
 		// printf("yay1\n");
 		for(l=k+1;l<n;l++){
 			// printf("yay5\n");
-			if(a<fabs(coeffs[l][k])){
+			// if()
+			if(cabs(a)<cabs(coeffs[l][k])){
 				a= coeffs[l][k];
 				ind = l;
 				// printf("yay3\n");
@@ -222,7 +225,7 @@ void solve_matrix(){
 			for(j=k;j<n+1;j++){
 				coeffs[i][j] = coeffs[i][j] -  c * coeffs[k][j] ;
 
-				if(fabs(coeffs[i][j]) < 0.0000005){
+				if(cabs(coeffs[i][j]) < 0.0000005){
 					coeffs[i][j] = 0;
 	            }
 			}
@@ -274,7 +277,7 @@ void solve_matrix(){
 		}
 		// printf("yay3\n");
 	}
-	else{printf("No Finite Solution Exists");}
+	else{printf("No Finite Solution Exists\n");}
 	// free(matrix);
 }
 
@@ -308,30 +311,6 @@ int main (int argc, char* argv[])
 	prtCmps();
 	int i,j;
 
-	// for(i=0; i<nSize; i++){
-	// 	printf("%s ", comps[i].n);
-	// 	printf("%c ", comps[i].type);
-	// 	printf("(%s ", comps[i].net1->name);
-	// 	printf("%d ",comps[i].net1->x);
-	// 	printf("%d) ",comps[i].net1->y);
-	// 	printf("(%s ", comps[i].net2->name);
-	// 	printf("%d ",comps[i].net2->x);
-	// 	printf("%d) ",comps[i].net2->y);
-	// 	printf("%g", comps[i].value);
-	// 	printf("%s\n", comps[i].unit);
-	// }
-
-	// printf("%d\n", cSize);
-
-	
-	// for(i=0; i<cSize; i++){
-	// 	printf("%s ",nets[i]->name);
-	// 	printf("%d ",nets[i]->x);
-	// 	printf("%d ",nets[i]->y);
-	// 	printf("%d ",nets[i]->min);
-	// 	printf("%d ",nets[i]->max);
-	// 	printf("%d\n", nNets[i]);
-	// }
 	for(i=0; i<cSize; i++){
 		fprintf(yyout,"<svg><text x=\"%d\" y=\"%d\" fill=\"black\" font-size=\"10\">%s</text></svg>\n",nets[i]->x-3,nets[i]->min-3,nets[i]->name);
 	}
@@ -346,93 +325,7 @@ int main (int argc, char* argv[])
 			break;
 		}
 	}
-	// printf("\n%d %d\n", nSize ,cSize);
-
-	// for(i=0;i<5;i++){
-	// 	for(j=0;j<5;j++){
-	// 		printf("%f ",coeffs[i][j] );
-	// 	}
-	// 	printf("\n");
-	// }
-
-	// if(sourceType == V_SRC){
-	// 	int v_idx1,v_idx2;
-
-	// 	for(i=0; i<nSize; i++){
-	// 		// printf("%s ", comps[i].n);
-	// 		// printf("%c ", comps[i].type);
-	// 		// printf("(%s ", comps[i].net1->name);
-	// 		// printf("%d ",comps[i].net1->x);
-	// 		// printf("%d) ",comps[i].net1->y);
-	// 		// printf("(%s ", comps[i].net2->name);
-	// 		// printf("%d ",comps[i].net2->x);
-	// 		// printf("%d) ",comps[i].net2->y);
-	// 		// printf("%g", comps[i].value);
-	// 		// printf("%s\n", comps[i].unit);
-	// 		if(comps[i].type=='v'){
-	// 			coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
-	// 			coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
-	// 			continue;
-	// 		}
-	// 		printf("%d ",comps[i].net1->idx);
-	// 		printf("%d ",comps[i].net2->idx );
-	// 		printf("%f\n",comps[i].value);
-	// 		coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
-	// 		coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
-
-	// 		coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
-	// 		coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
-	// 	}
-
-	// 	for(i=0; i<cSize; i++){
-	// 		for(j=0;j<=cSize;j++){
-	// 			printf("%f ",coeffs[i][j]);
-	// 		}
-	// 		printf("\n");
-	// 	}
-	// 	solve_matrix();
-
-	// } else {
-	// 	for(i=0; i<nSize; i++){
-	// 		printf("%s ", comps[i].n);
-	// 		printf("%c ", comps[i].type);
-	// 		printf("(%s ", comps[i].net1->name);
-	// 		printf("%d ",comps[i].net1->x);
-	// 		printf("%d) ",comps[i].net1->y);
-	// 		printf("(%s ", comps[i].net2->name);
-	// 		printf("%d ",comps[i].net2->x);
-	// 		printf("%d) ",comps[i].net2->y);
-	// 		printf("%g", comps[i].value);
-	// 		printf("%s\n", comps[i].unit);
-	// 		if(comps[i].type=='x'){
-	// 			coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
-	// 			coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
-	// 			continue;
-	// 		}
-	// 		printf("%d ",comps[i].net1->idx);
-	// 		printf("%d ",comps[i].net2->idx );
-	// 		printf("%f\n",comps[i].value);
-	// 		coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
-	// 		coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
-
-	// 		coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
-	// 		coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
-	// 	}
-
-	// 	for(i=0; i<cSize; i++){
-	// 		for(j=0;j<=cSize;j++){
-	// 			printf("%f ",coeffs[i][j]);
-	// 		}
-	// 		printf("\n");
-	// 	}
-	// 	solve_matrix();
-	// }
-	// printf("yay57487\n");
-
-	// float** matrix = (float**) malloc ((cSize - 1 + mVsrc) * sizeof(float*));
-	// for (i=0; i<(cSize - 1 + mVsrc); i++){
- //    	coeffs[i] = (float *)malloc((cSize - 1 + mVsrc) * sizeof(float));
- //    }
+	
 	// for(i=0; i<cSize - 1 + mVsrc; i++){
 	// 	for(j=0;j<=cSize - 1 + mVsrc;j++){
 	// 		printf("%f ",coeffs[i][j]);
@@ -440,122 +333,111 @@ int main (int argc, char* argv[])
 	// 	printf("\n");
 	// }
     int mV=0;
-    printf("%d %d \n", cSize-1, mVsrc);
-	for(i=0; i<nSize; i++){
-	if((comps[i].type)=='r')
-		comps[i].impedence=comps[i].value;
-		else if((comps[i].type)=='i')
-		comps[i].impedence=comps[i].value*2*3.12*freq*I;
-		else if((comps[i].type)=='c')
-		comps[i].impedence=(1/(comps[i].value*2*3.12*freq))*I;
-		
-		printf("%s ", comps[i].n);
-		printf("%c ", comps[i].type);
-		printf("(%s ", comps[i].net1->name);
-		printf("%d ",comps[i].net1->x);
-		printf("%d) ",comps[i].net1->y);
-		printf("(%s ", comps[i].net2->name);
-		printf("%d ",comps[i].net2->x);
-		printf("%d) ",comps[i].net2->y);
-		printf("%g", comps[i].value);
-		printf("%s\n", comps[i].unit);
-		// if(comps[i].type=='x'){
-		// 	coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
-		// 	coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
-		// 	continue;
-		// }
-		printf("%d ",comps[i].net1->idx);
-		printf("%d ",comps[i].net2->idx );
-		printf("%f\n",comps[i].value);
-		// coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
-		// coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
+    printf("%d %d %d\n", cSize-1, mVsrc, nFreq);
 
-		// coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
-		// coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+    for(j=0;j<nFreq;j++){
+    	float freq = freqs[j];
+		for(i=0; i<nSize; i++){
+			printf("yayay %f %f\n", comps[i].frequency,freq);
+			if(comps[i].frequency == freq) printf("yayay %f %f\n", comps[i].frequency,freq);
+			if((comps[i].type)=='r')
+				comps[i].impedence=comps[i].value;
+			else if((comps[i].type)=='i')
+				comps[i].impedence=comps[i].value*2*3.12*freq*I;
+			else if((comps[i].type)=='c')
+				comps[i].impedence=(-1/(comps[i].value*2*3.12*freq))*I;
+			
+			printf("%s ", comps[i].n);
+			printf("%c ", comps[i].type);
+			printf("(%s ", comps[i].net1->name);
+			printf("%d ",comps[i].net1->x);
+			printf("%d) ",comps[i].net1->y);
+			printf("(%s ", comps[i].net2->name);
+			printf("%d ",comps[i].net2->x);
+			printf("%d) ",comps[i].net2->y);
+			printf("%g", comps[i].value);
+			printf("%s\n", comps[i].unit);
+			// if(comps[i].type=='x'){
+			// 	coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
+			// 	coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
+			// 	continue;
+			// }
+			printf("%d ",comps[i].net1->idx);
+			printf("%d ",comps[i].net2->idx );
+			printf("%f\n",comps[i].value);
+			// coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
+			// coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
 
-		switch(comps[i].type){
-			case 'x' :
-				if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = comps[i].amplitude;
-				if(comps[i].net2->idx != -1) coeffs[comps[i].net2->idx][cSize-1 + mVsrc] = comps[i].amplitude;
-				break;
+			// coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
+			// coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
 
-			case 'v' :
-				if(comps[i].net1->idx==-1){
-					coeffs[comps[i].net2->idx][cSize-1 + mV] += -1.0;
-					coeffs[cSize-1 + mV][comps[i].net2->idx] += -1.0;
-				} else {
-					if(comps[i].net2->idx==-1){
-						coeffs[comps[i].net1->idx][cSize-1 + mV] += 1.0;
-						coeffs[cSize-1 + mV][comps[i].net1->idx] += 1.0;
+			switch(comps[i].type){
+				case 'x' :
+					if(comps[i].frequency == freq){
+						if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = comps[i].amplitude;
+						if(comps[i].net2->idx != -1) coeffs[comps[i].net2->idx][cSize-1 + mVsrc] = comps[i].amplitude;
 					} else {
-						coeffs[comps[i].net1->idx][cSize-1 + mV] += 1.0;
-						coeffs[comps[i].net2->idx][cSize-1 + mV] += -1.0;
-						
-						coeffs[cSize-1 + mV][comps[i].net1->idx] += 1.0;
-						coeffs[cSize-1 + mV][comps[i].net2->idx] += -1.0;
+						if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = 0;
+						if(comps[i].net2->idx != -1) coeffs[comps[i].net2->idx][cSize-1 + mVsrc] = 0;
 					}
-				}
-				// if(comps[i].net1->idx==-1){
-				// 	coeffs[comps[i].net2->idx][cSize-1 + mV] += -i;
-				// 	coeffs[cSize-1 + mV][comps[i].net2->idx] += -i;
-				// } else {
-				// 	if(comps[i].net2->idx==-1){
-				// 		coeffs[comps[i].net1->idx][cSize-1 + mV] += i;
-				// 		coeffs[cSize-1 + mV][comps[i].net1->idx] += i;
-				// 	} else {
-				// 		coeffs[comps[i].net1->idx][cSize-1 + mV] += i;
-				// 		coeffs[comps[i].net2->idx][cSize-1 + mV] += -i;
-						
-				// 		coeffs[cSize-1 + mV][comps[i].net1->idx] += i;
-				// 		coeffs[cSize-1 + mV][comps[i].net2->idx] += -i;
-				// 	}
-				// }
-				coeffs[cSize-1 + mV][cSize-1 + mVsrc] = comps[i].amplitude;
-				mV++;
-				break;
+					break;
 
-			case 'r' :
-			case 'i' :
-			case 'c' :
-				if(comps[i].net1->idx==-1){
-					coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
-				} else {
-					if(comps[i].net2->idx==-1){
-						coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].impedence;
+				case 'v' :
+					if(comps[i].net1->idx==-1){
+						coeffs[comps[i].net2->idx][cSize-1 + mV] += -1.0;
+						coeffs[cSize-1 + mV][comps[i].net2->idx] += -1.0;
 					} else {
-						coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].impedence;
-						coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].impedence;
-						coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].impedence;
-						coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].impedence;
-				}
-				// if(comps[i].net1->idx==-1){
-				// 	coeffs[comps[i].net2->idx][comps[i].net2->idx] += i;
-				// } else {
-				// 	if(comps[i].net2->idx==-1){
-				// 		coeffs[comps[i].net1->idx][comps[i].net1->idx] += i;
-				// 	} else {
-				// 		coeffs[comps[i].net1->idx][comps[i].net1->idx] += i;
-				// 		coeffs[comps[i].net1->idx][comps[i].net2->idx] -= i;
-				// 		coeffs[comps[i].net2->idx][comps[i].net1->idx] -= i;
-				// 		coeffs[comps[i].net2->idx][comps[i].net2->idx] += i;
-				// 	}
-				// }
-				break;
+						if(comps[i].net2->idx==-1){
+							coeffs[comps[i].net1->idx][cSize-1 + mV] += 1.0;
+							coeffs[cSize-1 + mV][comps[i].net1->idx] += 1.0;
+						} else {
+							coeffs[comps[i].net1->idx][cSize-1 + mV] += 1.0;
+							coeffs[comps[i].net2->idx][cSize-1 + mV] += -1.0;
+							
+							coeffs[cSize-1 + mV][comps[i].net1->idx] += 1.0;
+							coeffs[cSize-1 + mV][comps[i].net2->idx] += -1.0;
+						}
+					}
+					
+					coeffs[cSize-1 + mV][cSize-1 + mVsrc] = (comps[i].frequency == freq) ? comps[i].amplitude : 0;
+					mV++;
+					break;
 
+				case 'r' :
+				case 'i' :
+				case 'c' :
+					if(comps[i].net1->idx==-1){
+						coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+					} else {
+						if(comps[i].net2->idx==-1){
+							coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].impedence;
+						} else {
+							coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].impedence;
+							coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].impedence;
+							coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].impedence;
+							coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].impedence;
+						}
+					}
+					break;
+
+			}
+		}
+
+		for(i=0; i<cSize - 1 + mVsrc; i++){
+			for(j=0;j<=cSize - 1 + mVsrc;j++){
+				printf("%f + %fi     ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
+			}
+			printf("\n");
+		}
+		solve_matrix();
+		for(i=0; i<cSize - 1 + mVsrc; i++){
+			for(j=0;j<=cSize - 1 + mVsrc;j++){
+				printf("%f + %fi     ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
+			}
+			printf("\n");
 		}
 	}
 
-	for(i=0; i<cSize - 1 + mVsrc; i++){
-		for(j=0;j<=cSize - 1 + mVsrc;j++){
-			printf("%f + %fi ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
-		}
-		printf("\n");
-	}
-	solve_matrix();
-	for(i=0; i<cSize - 1 + mVsrc; i++){
-		for(j=0;j<=cSize - 1 + mVsrc;j++){
-			printf("%f + %fi ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
-		}
-		printf("\n");
-	}
+	// double complex c1 = 0.0;
+	// printf("%s\n", (c1==0)?"Y":"N");
 }
