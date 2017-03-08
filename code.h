@@ -10,6 +10,7 @@ typedef struct
 	int max;
 	int setMin;
 	int setMax;
+	double complex voltage;
 } net;
 
 typedef struct 
@@ -29,6 +30,8 @@ typedef struct
 	char dcoffsetunit[100];
 	char rest[100];
 	int x1,y1,x2,y2;
+	double complex voltage;
+	double complex current;
 } elem;
 
 typedef struct {
