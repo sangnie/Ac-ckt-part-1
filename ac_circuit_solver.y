@@ -172,7 +172,7 @@ void prtCmps(){
 	}
 }
 
-void solve_matrix(){
+void solve_matrix(float freq){
 	// printf("yay\n");
 	int row=cSize-1+mVsrc,col=cSize-1+mVsrc;
 	int row1=cSize-1+mVsrc,col1=1;
@@ -235,19 +235,26 @@ void solve_matrix(){
 	// printf("yay1\n");
 
 	// Findind the rank of the Matrix
-	int count,zerorows=0,aug_non_zero =0;
+	int count,count1,zerorows=0,aug_non_zero =0;
 	
 	for(i=0;i<row;i++){
 		count = 0;
-		for(j=0;j<col +1;j++){
-			if(coeffs[i][j] == 0){
+		for(j=0;j<col;j++){
+			if(coeffs[i][j] == 0.0){
 				count +=1;
+			}
+			else continue;
+        }
+        count1 =0;
+        for(j=0;j<col+1;j++){
+			if(coeffs[i][j] == 0.0){
+				count1 +=1;
 			}
 			else continue;
         }
 			
 		if(count == n){ zerorows +=1 ;}
-		else if (count == n+1) {aug_non_zero +=1 ;}
+		else if (count1 == n+1) {aug_non_zero +=1 ;}
 	}
 	// printf("yay2\n");
 
@@ -255,6 +262,8 @@ void solve_matrix(){
 
 	rankA = row - zerorows;
 	rankAB = row - aug_non_zero;
+
+	// printf("rankA : %d , rankAB: %d, Col: %d",rankA,rankAB,col);
 
 	//Checking the Solution
 	if (rankA == rankAB && rankA == col){
@@ -291,18 +300,23 @@ void solve_matrix(){
 	
 		
 		//FINAL OUTPUT
-		printf("FREQ=%.3fKhz\n",freq/1000);
-		printf("VOLTAGES\n");
+		fprintf(yyout,"FREQ=%.3fKhz\n",freq/1000);
+		fprintf(yyout,"VOLTAGES\n");
 		double magnitude;
 		double angle;
 		for(i=0;i<nSize;i++)
 		{
 			comps[i].voltage=(comps[i].net2->voltage)-(comps[i].net1->voltage);
 			magnitude=cabs((comps[i].net2->voltage)-(comps[i].net1->voltage));
-			angle=(180/3.14)*(atan((cimag((comps[i].net2->voltage)-(comps[i].net1->voltage)))/(creal((comps[i].net2->voltage)-(comps[i].net1->voltage)))));
-			printf("%s %.3f %.3f\n",comps[i].n,magnitude,angle);
+			if(((comps[i].net2->voltage)-(comps[i].net1->voltage)) == 0){
+				angle = 0;
+			} else {
+			angle=(180/M_PI)*(atan((cimag((comps[i].net2->voltage)-(comps[i].net1->voltage)))/(creal((comps[i].net2->voltage)-(comps[i].net1->voltage)))));
+			}
+			// angle=(180/M_PI)*((comps[i].net2->voltage)-(comps[i].net1->voltage));
+			fprintf(yyout,"%s %.3f %.3f\n",comps[i].n,magnitude,angle);
 		}
-		printf("CURRENTS\n");
+		fprintf(yyout,"\nCURRENTS\n");
 		int count=cSize-1;
 		for(i=0;i<nSize;i++)
 		{
@@ -316,10 +330,16 @@ void solve_matrix(){
 				comps[i].current=(comps[i].voltage)/(comps[i].impedence);
 			}
 			magnitude=cabs(comps[i].current);
-			angle=(180/3.14)*(atan((cimag(comps[i].current))/(creal(comps[i].current))));
-			printf("%s %.3f %.3f\n",comps[i].n,magnitude,angle);
+			if(comps[i].current == 0){
+				angle = 0;
+			} else {
+			angle=(180/M_PI)*(atan((cimag(comps[i].current))/(creal(comps[i].current))));
+			}
+			// angle = (180/M_PI)*carg(comps[i].current);
+			fprintf(yyout,"%s %.3f %.3f\n",comps[i].n,magnitude,angle);
 			
 		}
+		fprintf(yyout, "\n");
 	}
 	else{printf("No Finite Solution Exists\n");}
 	// free(matrix);
@@ -337,7 +357,7 @@ int main (int argc, char* argv[])
 	nets[0]->idx=-1;
 	nNets[0] = 0;
 
-	yyout=fopen("out.svg","w");
+	yyout=fopen(argv[2],"w");
 	inp=fopen("inp.txt","r");
 	char c;
 	c=getc(inp);
@@ -365,10 +385,13 @@ int main (int argc, char* argv[])
 
 	for(i=0; i<cSize; i++){
 		if(nNets[i]==1){
-			printf("Invalid Circuit-dangling wire present.\n");
+			fprintf(stderr,"Invalid Circuit-dangling wire present.\n");
+			return EXIT_FAILURE;
 			break;
 		}
 	}
+
+	yyout=fopen(argv[3],"w");
 	
 	// for(i=0; i<cSize - 1 + mVsrc; i++){
 	// 	for(j=0;j<=cSize - 1 + mVsrc;j++){
@@ -376,76 +399,68 @@ int main (int argc, char* argv[])
 	// 	}
 	// 	printf("\n");
 	// }
-	
-	for(i=0;i<nSize;i++)
-	{
-		if(comps[i].type=='x' || comps[i].type=='v')
-		{
-			//printf("COMPS[I].UNIT=%s\n\n",comps[i].unit);
-			if(strcmp(comps[i].unit,"Khz")==0 || strcmp(comps[i].unit,"KHz")==0)
-			{
-			//printf("here\n");
-			comps[i].frequency*=1000;
-			freq*=1000;
-			}
-			if(comps[i].dcoffsetunit=="K")
-			comps[i].DC*=1000;
-		}
-		else
-		{
-			if(strcmp(comps[i].unit,"FH")==0 || strcmp(comps[i].unit,"F")==0 || strcmp(comps[i].unit,"FF")==0)
-			comps[i].value=comps[i].value* pow(10,-15);
-			else if(strcmp(comps[i].unit,"PH")==0 || strcmp(comps[i].unit,"P")==0 || strcmp(comps[i].unit,"PF")==0)
-			comps[i].value=comps[i].value* pow(10,-12);
-			else if(strcmp(comps[i].unit,"NH")==0 || strcmp(comps[i].unit,"N")==0 || strcmp(comps[i].unit,"NF")==0)
-			comps[i].value=comps[i].value* pow(10,-9);
-			else if(strcmp(comps[i].unit,"UH")==0 || strcmp(comps[i].unit,"U")==0 || strcmp(comps[i].unit,"UF")==0)
-			comps[i].value=comps[i].value* pow(10,-6);
-			else if(strcmp(comps[i].unit,"MH")==0 || strcmp(comps[i].unit,"M")==0 || strcmp(comps[i].unit,"MF")==0)
-			comps[i].value=comps[i].value* pow(10,-3);
-			else if(strcmp(comps[i].unit,"KH")==0 || strcmp(comps[i].unit,"K")==0 || strcmp(comps[i].unit,"KF")==0)
-			comps[i].value=comps[i].value* pow(10,3);
-			else if(strcmp(comps[i].unit,"MEGH")==0 || strcmp(comps[i].unit,"MEG")==0 || strcmp(comps[i].unit,"MEGF")==0)
-			comps[i].value=comps[i].value* pow(10,6); 
-		}
-	}
-	
-	
-	
-	
-    int mV=0;
+    // int mV=0;
     printf("%d %d %d\n", cSize-1, mVsrc, nFreq);
 
     for(j=0;j<nFreq;j++){
-    	float freq = freqs[j];
+    	printf("%g Hz \n",freqs[j] );
+    }
+
+    for(i=0;i<nFreq; i++){
+    	for(j=i+1;j<nFreq; j++){
+    		if(freqs[j] < freqs[i]){
+    			int temp = freqs[j];
+    			freqs[j] = freqs[i];
+    			freqs[i] = temp;
+    		}
+    	}
+    }
+
+    for(j=0;j<nFreq;j++){
+    	printf("%g Hz \n",freqs[j] );
+    }
+
+    int k;
+    for(k=0;k<nFreq;k++){
+    	// coeffs = {{0.0}};
+    	int mV = 0;
+    	for(i=0; i<cSize - 1 + mVsrc; i++){
+			for(j=0;j<=cSize - 1 + mVsrc;j++){
+				coeffs[i][j] = 0.0;
+				// printf("%f + %fi     ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
+			}
+			// printf("\n");
+		}
+    	float freq = freqs[k];
+    	// printf("Evaluating at %f Hz\n", freq);
 		for(i=0; i<nSize; i++){
-			printf("yayay %f %f\n", comps[i].frequency,freq);
-			if(comps[i].frequency == freq) printf("yayay %f %f\n", comps[i].frequency,freq);
+			// printf("yayay %f %f\n", comps[i].frequency,freq);
+			// if(comps[i].frequency == freq) printf("yayay %f %f\n", comps[i].frequency,freq);
 			if((comps[i].type)=='r')
 				comps[i].impedence=comps[i].value;
 			else if((comps[i].type)=='i')
-				comps[i].impedence=comps[i].value*2*3.12*freq*I;
+				comps[i].impedence=comps[i].value*2*M_PI*freq*I;
 			else if((comps[i].type)=='c')
-				comps[i].impedence=(-1/(comps[i].value*2*3.12*freq))*I;
+				comps[i].impedence=(-1/(comps[i].value*2*M_PI*freq))*I;
 			
-			printf("%s ", comps[i].n);
-			printf("%c ", comps[i].type);
-			printf("(%s ", comps[i].net1->name);
-			printf("%d ",comps[i].net1->x);
-			printf("%d) ",comps[i].net1->y);
-			printf("(%s ", comps[i].net2->name);
-			printf("%d ",comps[i].net2->x);
-			printf("%d) ",comps[i].net2->y);
-			printf("%g", comps[i].value);
-			printf("%s\n", comps[i].unit);
+			// printf("%s ", comps[i].n);
+			// printf("%c ", comps[i].type);
+			// printf("(%s ", comps[i].net1->name);
+			// printf("%d ",comps[i].net1->x);
+			// printf("%d) ",comps[i].net1->y);
+			// printf("(%s ", comps[i].net2->name);
+			// printf("%d ",comps[i].net2->x);
+			// printf("%d) ",comps[i].net2->y);
+			// printf("%g", comps[i].value);
+			// printf("%s\n", comps[i].unit);
 			// if(comps[i].type=='x'){
 			// 	coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
 			// 	coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
 			// 	continue;
 			// }
-			printf("%d ",comps[i].net1->idx);
-			printf("%d ",comps[i].net2->idx );
-			printf("%f\n",comps[i].value);
+			// printf("%d ",comps[i].net1->idx);
+			// printf("%d ",comps[i].net2->idx );
+			// printf("%f\n",comps[i].value);
 			// coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
 			// coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
 
@@ -510,13 +525,14 @@ int main (int argc, char* argv[])
 			}
 			printf("\n");
 		}
-		solve_matrix();
+		solve_matrix(freq);
 		for(i=0; i<cSize - 1 + mVsrc; i++){
 			for(j=0;j<=cSize - 1 + mVsrc;j++){
 				printf("%f + %fi     ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
 			}
 			printf("\n");
 		}
+		printf("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
 	}
 
 	// double complex c1 = 0.0;
