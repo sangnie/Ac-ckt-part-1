@@ -390,6 +390,40 @@ int main (int argc, char* argv[])
 			break;
 		}
 	}
+	
+	for(i=0;i<nSize;i++)
+	{
+		if(comps[i].type=='x' || comps[i].type=='v')
+		{
+			//printf("COMPS[I].UNIT=%s\n\n",comps[i].unit);
+			if(strcmp(comps[i].unit,"Khz")==0 || strcmp(comps[i].unit,"KHz")==0)
+			{
+			//printf("here\n");
+			comps[i].frequency*=1000;
+			freq*=1000;
+			}
+			if(comps[i].dcoffsetunit=="K")
+			comps[i].DC*=1000;
+		}
+		else
+		{
+			if(strcmp(comps[i].unit,"FH")==0 || strcmp(comps[i].unit,"F")==0 || strcmp(comps[i].unit,"FF")==0)
+			comps[i].value=comps[i].value* pow(10,-15);
+			else if(strcmp(comps[i].unit,"PH")==0 || strcmp(comps[i].unit,"P")==0 || strcmp(comps[i].unit,"PF")==0)
+			comps[i].value=comps[i].value* pow(10,-12);
+			else if(strcmp(comps[i].unit,"NH")==0 || strcmp(comps[i].unit,"N")==0 || strcmp(comps[i].unit,"NF")==0)
+			comps[i].value=comps[i].value* pow(10,-9);
+			else if(strcmp(comps[i].unit,"UH")==0 || strcmp(comps[i].unit,"U")==0 || strcmp(comps[i].unit,"UF")==0)
+			comps[i].value=comps[i].value* pow(10,-6);
+			else if(strcmp(comps[i].unit,"MH")==0 || strcmp(comps[i].unit,"M")==0 || strcmp(comps[i].unit,"MF")==0)
+			comps[i].value=comps[i].value* pow(10,-3);
+			else if(strcmp(comps[i].unit,"KH")==0 || strcmp(comps[i].unit,"K")==0 || strcmp(comps[i].unit,"KF")==0)
+			comps[i].value=comps[i].value* pow(10,3);
+			else if(strcmp(comps[i].unit,"MEGH")==0 || strcmp(comps[i].unit,"MEG")==0 || strcmp(comps[i].unit,"MEGF")==0)
+			comps[i].value=comps[i].value* pow(10,6); 
+		}
+	}
+
 
 	yyout=fopen(argv[3],"w");
 	
