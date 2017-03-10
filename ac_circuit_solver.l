@@ -173,8 +173,15 @@ SrcId (I|V)[0-9]*
 								flag=0;
 								count2=0;
 								(yylval.e).amplitude=0;
+								/*(yylval.e).rest[count]=' ';
+								count++;
+								i++;
+								flag=0;
+								count2=0;
+								(yylval.e).amplitude=0;*/
 								
-								while(yytext[i]!=' ') 
+								check=0;
+								while(yytext[i]!=' ' && yytext[i]!='K') 
 								{
 								if(yytext[i]=='.')
 								flag=count2;
@@ -184,11 +191,27 @@ SrcId (I|V)[0-9]*
 								count++;
 								i++;
 								count2++;
+								if(yytext[i]=='K')
+								check=1;
 								}
 								if(flag!=0)
 								(yylval.e).amplitude=(yylval.e).amplitude/pow(10,count2-flag-1);
 								count2=0;
 								printf("amplitude=%f\n",(yylval.e).amplitude);
+								
+								if(check==1)
+								{
+								while(yytext[i]!=' ')
+								{
+									(yylval.e).amplitudeunit[count2]=yytext[i];
+									(yylval.e).rest[count]=yytext[i];
+									i++;
+									count2++;
+									count++;
+									
+								}}
+								else (yylval.e).amplitudeunit[0]='0';
+								printf("amplitudeunit=%s\n",(yylval.e).amplitudeunit);
 								
 								(yylval.e).rest[count]=' ';
 								count++;
