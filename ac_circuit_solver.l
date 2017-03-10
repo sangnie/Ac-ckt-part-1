@@ -82,7 +82,7 @@ SrcId (I|V)[0-9]*
 							 else printf("invalid input unit\n");
 						}
 
-(" ")*{SrcId}(" "+{Net}){2}(" ")+"SINE"(" ")+\((" "+{Digit}("K")?)(" "+{Digit}){2}("K")?("h"|"H")"z"(" "+{Digit})"S"(" "+{Digit})?(" ")\)(" ")* {
+(" ")*{SrcId}(" "+{Net}){2}(" ")+"SINE"(" ")+\((" "+{Digit}("K")?)((" "+{Digit})("K")?){2}("h"|"H")"z"(" "+{Digit})"S"(" "+{Digit})?(" ")\)(" ")* {
 							int i=0,count=0;
 							while(yytext[i]!=' ')
 							{
@@ -134,7 +134,6 @@ SrcId (I|V)[0-9]*
 								count=count+2;
 								i=i+2;
 								//SETTING DC
-								//SETTING DC
 								(yylval.e).DC=0;
 								int check=0;
 								while(yytext[i]!=' ' && yytext[i]!='K')
@@ -167,6 +166,7 @@ SrcId (I|V)[0-9]*
 								}}
 								else (yylval.e).dcoffsetunit[0]='0';
 								printf("dcoffsetunit=%s\n",(yylval.e).dcoffsetunit);
+								
 								(yylval.e).rest[count]=' ';
 								count++;
 								i++;
@@ -196,7 +196,7 @@ SrcId (I|V)[0-9]*
 								flag=0;
 								count2=0;
 								(yylval.e).frequency=0;
-								while(yytext[i]!='K' && yytext[i]!='h')
+								while(yytext[i]!='K' && yytext[i]!='h' && yytext[i]!='H')
 								{
 								if(yytext[i]=='.')
 								flag=count2;
