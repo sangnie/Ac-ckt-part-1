@@ -306,23 +306,31 @@ void solve_matrix(float freq){
 		double angle;
 		for(i=0;i<nSize;i++)
 		{
-			comps[i].voltage=(comps[i].net2->voltage)-(comps[i].net1->voltage);
-			magnitude=cabs((comps[i].net2->voltage)-(comps[i].net1->voltage));
-			if(((comps[i].net2->voltage)-(comps[i].net1->voltage)) == 0){
+			if(comps[i].type=='v' || comps[i].type=='x')
+			{
+				comps[i].voltage=(comps[i].net2->voltage)-(comps[i].net1->voltage);
+			}
+			else {comps[i].voltage=(comps[i].net1->voltage)-(comps[i].net2->voltage);}
+			magnitude=cabs((comps[i].net1->voltage)-(comps[i].net2->voltage));
+			if(((comps[i].net1->voltage)-(comps[i].net2->voltage)) == 0){
 				angle = 0;
 			} else {
-			angle=(180/M_PI)*(atan((cimag((comps[i].net2->voltage)-(comps[i].net1->voltage)))/(creal((comps[i].net2->voltage)-(comps[i].net1->voltage)))));
+			// angle=(180/M_PI)*(atan((cimag((comps[i].net1->voltage)-(comps[i].net2->voltage)))/(creal((comps[i].net1->voltage)-(comps[i].net2->voltage)))));
+			angle=(180/M_PI)*carg(comps[i].voltage);
 			}
-			// angle=(180/M_PI)*((comps[i].net2->voltage)-(comps[i].net1->voltage));
+			
 			fprintf(yyout,"%s %.3f %.3f\n",comps[i].n,magnitude,angle);
 		}
 		fprintf(yyout,"\nCURRENTS\n");
 		int count=cSize-1;
 		for(i=0;i<nSize;i++)
 		{
-			if(comps[i].type=='x' || comps[i].type=='v')
+			if(comps[i].type=='x'){
+				comps[i].current = comps[i].amplitude;
+			} 
+			if(comps[i].type=='v')
 			{
-				comps[i].current=var[count];
+				comps[i].current=-1 * var[count];
 				count++;		
 			}
 			else
@@ -333,9 +341,10 @@ void solve_matrix(float freq){
 			if(comps[i].current == 0){
 				angle = 0;
 			} else {
-			angle=(180/M_PI)*(atan((cimag(comps[i].current))/(creal(comps[i].current))));
+			// angle=(180/M_PI)*(atan((cimag(comps[i].current))/(creal(comps[i].current))));
+			angle = (180/M_PI)*carg(comps[i].current);
 			}
-			// angle = (180/M_PI)*carg(comps[i].current);
+			
 			fprintf(yyout,"%s %.3f %.3f\n",comps[i].n,magnitude,angle);
 			
 		}
@@ -378,6 +387,7 @@ int main (int argc, char* argv[])
 	for(i=0; i<cSize; i++){
 		fprintf(yyout,"<svg><text x=\"%d\" y=\"%d\" fill=\"black\" font-size=\"10\">%s</text></svg>\n",nets[i]->x-3,nets[i]->min-3,nets[i]->name);
 	}
+		fprintf(yyout, "</g>\n" );
 		fprintf(yyout, "\n</svg>\n");
 	if(nNets[0]==0){
 		fprintf(stderr,"No ground present.\n");
@@ -390,40 +400,6 @@ int main (int argc, char* argv[])
 			break;
 		}
 	}
-	
-	for(i=0;i<nSize;i++)
-	{
-		if(comps[i].type=='x' || comps[i].type=='v')
-		{
-			//printf("COMPS[I].UNIT=%s\n\n",comps[i].unit);
-			if(strcmp(comps[i].unit,"Khz")==0 || strcmp(comps[i].unit,"KHz")==0)
-			{
-			//printf("here\n");
-			comps[i].frequency*=1000;
-			freq*=1000;
-			}
-			if(comps[i].dcoffsetunit=="K")
-			comps[i].DC*=1000;
-		}
-		else
-		{
-			if(strcmp(comps[i].unit,"FH")==0 || strcmp(comps[i].unit,"F")==0 || strcmp(comps[i].unit,"FF")==0)
-			comps[i].value=comps[i].value* pow(10,-15);
-			else if(strcmp(comps[i].unit,"PH")==0 || strcmp(comps[i].unit,"P")==0 || strcmp(comps[i].unit,"PF")==0)
-			comps[i].value=comps[i].value* pow(10,-12);
-			else if(strcmp(comps[i].unit,"NH")==0 || strcmp(comps[i].unit,"N")==0 || strcmp(comps[i].unit,"NF")==0)
-			comps[i].value=comps[i].value* pow(10,-9);
-			else if(strcmp(comps[i].unit,"UH")==0 || strcmp(comps[i].unit,"U")==0 || strcmp(comps[i].unit,"UF")==0)
-			comps[i].value=comps[i].value* pow(10,-6);
-			else if(strcmp(comps[i].unit,"MH")==0 || strcmp(comps[i].unit,"M")==0 || strcmp(comps[i].unit,"MF")==0)
-			comps[i].value=comps[i].value* pow(10,-3);
-			else if(strcmp(comps[i].unit,"KH")==0 || strcmp(comps[i].unit,"K")==0 || strcmp(comps[i].unit,"KF")==0)
-			comps[i].value=comps[i].value* pow(10,3);
-			else if(strcmp(comps[i].unit,"MEGH")==0 || strcmp(comps[i].unit,"MEG")==0 || strcmp(comps[i].unit,"MEGF")==0)
-			comps[i].value=comps[i].value* pow(10,6); 
-		}
-	}
-
 
 	yyout=fopen(argv[3],"w");
 	
@@ -504,7 +480,7 @@ int main (int argc, char* argv[])
 			switch(comps[i].type){
 				case 'x' :
 					if(comps[i].frequency == freq){
-						if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = comps[i].amplitude;
+						if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = -1 * comps[i].amplitude;
 						if(comps[i].net2->idx != -1) coeffs[comps[i].net2->idx][cSize-1 + mVsrc] = comps[i].amplitude;
 					} else {
 						if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = 0;
@@ -514,18 +490,18 @@ int main (int argc, char* argv[])
 
 				case 'v' :
 					if(comps[i].net1->idx==-1){
-						coeffs[comps[i].net2->idx][cSize-1 + mV] += -1.0;
-						coeffs[cSize-1 + mV][comps[i].net2->idx] += -1.0;
+						coeffs[comps[i].net2->idx][cSize-1 + mV] += 1.0;
+						coeffs[cSize-1 + mV][comps[i].net2->idx] += 1.0;
 					} else {
 						if(comps[i].net2->idx==-1){
-							coeffs[comps[i].net1->idx][cSize-1 + mV] += 1.0;
-							coeffs[cSize-1 + mV][comps[i].net1->idx] += 1.0;
+							coeffs[comps[i].net1->idx][cSize-1 + mV] += -1.0;
+							coeffs[cSize-1 + mV][comps[i].net1->idx] += -1.0;
 						} else {
-							coeffs[comps[i].net1->idx][cSize-1 + mV] += 1.0;
-							coeffs[comps[i].net2->idx][cSize-1 + mV] += -1.0;
+							coeffs[comps[i].net1->idx][cSize-1 + mV] += -1.0;
+							coeffs[comps[i].net2->idx][cSize-1 + mV] += 1.0;
 							
-							coeffs[cSize-1 + mV][comps[i].net1->idx] += 1.0;
-							coeffs[cSize-1 + mV][comps[i].net2->idx] += -1.0;
+							coeffs[cSize-1 + mV][comps[i].net1->idx] += -1.0;
+							coeffs[cSize-1 + mV][comps[i].net2->idx] += 1.0;
 						}
 					}
 					
