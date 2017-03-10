@@ -1,5 +1,5 @@
 void yyerror(char* s);
-
+#include <complex.h>
 typedef struct 
 {
 	char name[100];
@@ -10,6 +10,7 @@ typedef struct
 	int max;
 	int setMin;
 	int setMax;
+	double complex voltage;
 } net;
 
 typedef struct 
@@ -24,9 +25,14 @@ typedef struct
 	double amplitude;
 	double delay;
 	double damp;
+	double complex impedence;
 	char unit[100];
+	char dcoffsetunit[100];
+	char amplitudeunit[100];
 	char rest[100];
 	int x1,y1,x2,y2;
+	double complex voltage;
+	double complex current;
 } elem;
 
 typedef struct {

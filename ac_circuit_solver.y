@@ -1,5 +1,6 @@
 %{
 #include "code.h"
+ #include<complex.h>
  #include <stdio.h>
  #include <stdlib.h>
 #include <string.h>
@@ -13,30 +14,36 @@ FILE* inp;
 elem comps[10000];
 net* nets[10000];
 int nNets[10000]={0};
-float voltage[10000][10000]={0.0};
+double complex coeffs[10000][10000]={0.0};
 int nSize=0, cSize=1, grounded=0;
 
+float freqs[1000] = {0.0};
+int nFreq = 0;
 #define V_SRC 0
 #define I_SRC 1
 int sourceType;
+int mVsrc = 0;
 %}
 
 %union{
 	elem e;
 };
 
-%token RES CAP IND SOURCE 
-%type <e>exp RES CAP IND SOURCE
+%token RES CAP IND VSRC ISRC
+%type <e>exp RES CAP IND VSRC ISRC
 
 %%
 exp: RES {comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2));nSize++;}
 	|CAP {comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
 	|IND { comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
-	|SOURCE {comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType =(comps[nSize].type == 'v') ? V_SRC : I_SRC; nSize++;}
+	|VSRC { comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType = V_SRC; nSize++; mVsrc++;}
+	|ISRC { comps[nSize] = $1; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType = I_SRC; nSize++;}
+	
 	| exp RES {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
 	| exp CAP {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
 	| exp IND {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); nSize++;}
-	| exp SOURCE {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType =(comps[nSize].type == 'v') ? 0 : 1; nSize++; }
+	| exp VSRC {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType= V_SRC; nSize++; mVsrc++;}
+	| exp ISRC {comps[nSize] = $2; addNets(&(comps[nSize].net1)); addNets(&(comps[nSize].net2)); sourceType= I_SRC; nSize++;}
 	;
 %%
 
@@ -67,7 +74,7 @@ void addNets(net **n1){
 	nets[cSize]->y = 50;
 	nets[cSize]->setMin = 0;
 	nets[cSize]->max = 0;
-	nets[cSize]->idx = cSize;
+	nets[cSize]->idx = cSize-1;
 	cSize++;
 	return;
 }
@@ -165,60 +172,61 @@ void prtCmps(){
 	}
 }
 
-void solve_matrix(){
+void solve_matrix(float freq){
 	// printf("yay\n");
-	int row=cSize-1,col=cSize-1;
-	int row1=cSize-1,col1=1;
-	int n=cSize-1,i,j,k,p;
-	float c,d,e,sum,a;
-	// float matrix[10000][10000];
-	float var[10000],b;
+	int row=cSize-1+mVsrc,col=cSize-1+mVsrc;
+	int row1=cSize-1+mVsrc,col1=1;
+	int n=cSize-1+mVsrc,i,j,k,p;
+	double complex c,d,e,sum,a;
+	// float coeffs[10000][10000];
+	double complex var[10000],b;
 	// printf("yay1\n");
 
-	float** matrix = (float**) malloc (cSize * sizeof(float*));
-	for (i=0; i<cSize; i++){
-    	matrix[i] = (float *)malloc(cSize * sizeof(float));
-    }
-
-	for(i=0;i<cSize-1;i++){
-		for(j=0;j<cSize; j++){
-			matrix[i][j] = voltage[i+1][j+1];
-			// printf("%f ", matrix[i][j]);
-		}
-		// printf("\n");
-	}
+	// float** matrix = (float**) malloc (cSize * sizeof(float*));
+	// for (i=0; i<cSize; i++){
+ //    	coeffs[i] = (float *)malloc(cSize * sizeof(float));
+ //    }
+ //    printf("\n");
+	// for(i=0;i<cSize-1;i++){
+	// 	for(j=0;j<cSize; j++){
+	// 		coeffs[i][j] = coeffs[i+1][j+1];
+	// 		printf("%f ", coeffs[i][j]);
+	// 	}
+	// 	printf("\n");
+	// }
 	// printf("yay\n");
-//Making Upper Triangular Matrix				
+	//Making Upper Triangular Matrix				
 	for(k=0;k<n;k++){
-		float a= matrix[k][k],temp=0;
+		double complex a= coeffs[k][k],temp=0;
 		int ind=k,l,m;
 		
 		// printf("yay1\n");
 		for(l=k+1;l<n;l++){
 			// printf("yay5\n");
-			if(a<fabs(matrix[l][k])){
-				a= matrix[l][k];
+			// if()
+			if(cabs(a)<cabs(coeffs[l][k])){
+				a= coeffs[l][k];
 				ind = l;
 				// printf("yay3\n");
 			}
 			else continue;
 		
 			for(m=0;m<n+1;m++){
-				temp = matrix[k][m];
-				matrix[k][m] = matrix[ind][m];
-				matrix[ind][m] = temp;
+				temp = coeffs[k][m];
+				coeffs[k][m] = coeffs[ind][m];
+				coeffs[ind][m] = temp;
 				// printf("yay4\n");
 			}
 		}
 		// printf("yay2\n");
 		for(i=k+1;i<n;i++){
-			c = (matrix[i][k] / matrix[k][k] ) ;
+			c = (coeffs[i][k] / coeffs[k][k] ) ;
 
 			for(j=k;j<n+1;j++){
-				matrix[i][j] = matrix[i][j] -  c * matrix[k][j] ;
+				coeffs[i][j] = coeffs[i][j] -  c * coeffs[k][j] ;
 
-				if(fabs(matrix[i][j]) < 0.0000005){
-					matrix[i][j] = 0;
+				if(cabs(coeffs[i][j]) < 0.0000005){
+					coeffs[i][j] = 0;
 	            }
 			}
 		}
@@ -227,19 +235,26 @@ void solve_matrix(){
 	// printf("yay1\n");
 
 	// Findind the rank of the Matrix
-	int count,zerorows=0,aug_non_zero =0;
+	int count,count1,zerorows=0,aug_non_zero =0;
 	
 	for(i=0;i<row;i++){
 		count = 0;
-		for(j=0;j<col +1;j++){
-			if(matrix[i][j] == 0){
+		for(j=0;j<col;j++){
+			if(coeffs[i][j] == 0.0){
 				count +=1;
+			}
+			else continue;
+        }
+        count1 =0;
+        for(j=0;j<col+1;j++){
+			if(coeffs[i][j] == 0.0){
+				count1 +=1;
 			}
 			else continue;
         }
 			
 		if(count == n){ zerorows +=1 ;}
-		else if (count == n+1) {aug_non_zero +=1 ;}
+		else if (count1 == n+1) {aug_non_zero +=1 ;}
 	}
 	// printf("yay2\n");
 
@@ -248,29 +263,95 @@ void solve_matrix(){
 	rankA = row - zerorows;
 	rankAB = row - aug_non_zero;
 
+	// printf("rankA : %d , rankAB: %d, Col: %d",rankA,rankAB,col);
+
 	//Checking the Solution
 	if (rankA == rankAB && rankA == col){
 	    printf("Unique Solution Exists \n");
 
 		//Back Substitution
-		var[n-1] = matrix[n-1][n] /matrix[n-1][n-1];
+		var[n-1] = coeffs[n-1][n] /coeffs[n-1][n-1];
 		for(i=0;i<n;i++){
 			sum = 0;
 			for(j=0;j<i;j++){
 				b= var[n-j-1];
-				a = matrix[n-i-1][n-j-1];
+				a = coeffs[n-i-1][n-j-1];
 				sum = sum +  a*b  ;
 			}
-			var[n-i-1] = (matrix[n-i-1][n] - sum)/ matrix[n-i-1][n-i-1] ;
+			var[n-i-1] = (coeffs[n-i-1][n] - sum)/ coeffs[n-i-1][n-i-1] ;
 		}
 
 		for(i=0;i<n;i++){
-			printf("X[%d] -> %g\n",i+1,var[i]);
+			printf("X[%d] -> %g + %gi\n",i+1,creal(var[i]),cimag(var[i]));
 		}
 		// printf("yay3\n");
+		//voltages to nets
+		
+		nets[0]->voltage=0;
+		for(i=1;i<cSize;i++)
+		{
+			nets[i]->voltage=var[i-1];
+		}
+	
+		for(i=0;i<cSize;i++)
+		{
+			printf("net %s has voltage %3f + %3fi\n",nets[i]->name,creal(nets[i]->voltage),cimag(nets[i]->voltage));
+		}
+	
+		
+		//FINAL OUTPUT
+		fprintf(yyout,"FREQ=%.3fKhz\n",freq/1000);
+		fprintf(yyout,"VOLTAGES\n");
+		double magnitude;
+		double angle;
+		for(i=0;i<nSize;i++)
+		{
+			if(comps[i].type=='v' || comps[i].type=='x')
+			{
+				comps[i].voltage=(comps[i].net2->voltage)-(comps[i].net1->voltage);
+			}
+			else {comps[i].voltage=(comps[i].net1->voltage)-(comps[i].net2->voltage);}
+			magnitude=cabs((comps[i].net1->voltage)-(comps[i].net2->voltage));
+			if(((comps[i].net1->voltage)-(comps[i].net2->voltage)) == 0){
+				angle = 0;
+			} else {
+			// angle=(180/M_PI)*(atan((cimag((comps[i].net1->voltage)-(comps[i].net2->voltage)))/(creal((comps[i].net1->voltage)-(comps[i].net2->voltage)))));
+			angle=(180/M_PI)*carg(comps[i].voltage);
+			}
+			
+			fprintf(yyout,"%s %.3f %.3f\n",comps[i].n,magnitude,angle);
+		}
+		fprintf(yyout,"\nCURRENTS\n");
+		int count=cSize-1;
+		for(i=0;i<nSize;i++)
+		{
+			if(comps[i].type=='x'){
+				comps[i].current = comps[i].amplitude;
+			} 
+			if(comps[i].type=='v')
+			{
+				comps[i].current=-1 * var[count];
+				count++;		
+			}
+			else
+			{
+				comps[i].current=(comps[i].voltage)/(comps[i].impedence);
+			}
+			magnitude=cabs(comps[i].current);
+			if(comps[i].current == 0){
+				angle = 0;
+			} else {
+			// angle=(180/M_PI)*(atan((cimag(comps[i].current))/(creal(comps[i].current))));
+			angle = (180/M_PI)*carg(comps[i].current);
+			}
+			
+			fprintf(yyout,"%s %.3f %.3f\n",comps[i].n,magnitude,angle);
+			
+		}
+		fprintf(yyout, "\n");
 	}
-	else{printf("No Finite Solution Exists");}
-	free(matrix);
+	else{printf("No Finite Solution Exists\n");}
+	// free(matrix);
 }
 
 int main (int argc, char* argv[])
@@ -282,10 +363,10 @@ int main (int argc, char* argv[])
 	nets[0]->max = 0;
 	nets[0]->name[0]='0';
 	nets[0]->name[1]='\0';
-	nets[0]->idx=0;
+	nets[0]->idx=-1;
 	nNets[0] = 0;
 
-	yyout=fopen("out.svg","w");
+	yyout=fopen(argv[2],"w");
 	inp=fopen("inp.txt","r");
 	char c;
 	c=getc(inp);
@@ -303,33 +384,10 @@ int main (int argc, char* argv[])
 	prtCmps();
 	int i,j;
 
-	// for(i=0; i<nSize; i++){
-	// 	printf("%s ", comps[i].n);
-	// 	printf("%c ", comps[i].type);
-	// 	printf("(%s ", comps[i].net1->name);
-	// 	printf("%d ",comps[i].net1->x);
-	// 	printf("%d) ",comps[i].net1->y);
-	// 	printf("(%s ", comps[i].net2->name);
-	// 	printf("%d ",comps[i].net2->x);
-	// 	printf("%d) ",comps[i].net2->y);
-	// 	printf("%g", comps[i].value);
-	// 	printf("%s\n", comps[i].unit);
-	// }
-
-	// printf("%d\n", cSize);
-
-	
-	// for(i=0; i<cSize; i++){
-	// 	printf("%s ",nets[i]->name);
-	// 	printf("%d ",nets[i]->x);
-	// 	printf("%d ",nets[i]->y);
-	// 	printf("%d ",nets[i]->min);
-	// 	printf("%d ",nets[i]->max);
-	// 	printf("%d\n", nNets[i]);
-	// }
 	for(i=0; i<cSize; i++){
 		fprintf(yyout,"<svg><text x=\"%d\" y=\"%d\" fill=\"black\" font-size=\"10\">%s</text></svg>\n",nets[i]->x-3,nets[i]->min-3,nets[i]->name);
 	}
+		fprintf(yyout, "</g>\n" );
 		fprintf(yyout, "\n</svg>\n");
 	if(nNets[0]==0){
 		fprintf(stderr,"No ground present.\n");
@@ -337,57 +395,156 @@ int main (int argc, char* argv[])
 
 	for(i=0; i<cSize; i++){
 		if(nNets[i]==1){
-			printf("Invalid Circuit-dangling wire present.\n");
+			fprintf(stderr,"Invalid Circuit-dangling wire present.\n");
+			return EXIT_FAILURE;
 			break;
 		}
 	}
-	// printf("\n%d %d\n", nSize ,cSize);
 
-	// for(i=0;i<5;i++){
-	// 	for(j=0;j<5;j++){
-	// 		printf("%f ",voltage[i][j] );
+	yyout=fopen(argv[3],"w");
+	
+	// for(i=0; i<cSize - 1 + mVsrc; i++){
+	// 	for(j=0;j<=cSize - 1 + mVsrc;j++){
+	// 		printf("%f ",coeffs[i][j]);
 	// 	}
 	// 	printf("\n");
 	// }
+    // int mV=0;
+    printf("%d %d %d\n", cSize-1, mVsrc, nFreq);
 
-	if(sourceType == V_SRC){
-		
-	} else {
-		for(i=0; i<nSize; i++){
-			printf("%s ", comps[i].n);
-			printf("%c ", comps[i].type);
-			printf("(%s ", comps[i].net1->name);
-			printf("%d ",comps[i].net1->x);
-			printf("%d) ",comps[i].net1->y);
-			printf("(%s ", comps[i].net2->name);
-			printf("%d ",comps[i].net2->x);
-			printf("%d) ",comps[i].net2->y);
-			printf("%g", comps[i].value);
-			printf("%s\n", comps[i].unit);
-			if(comps[i].type=='x'){
-				voltage[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
-				voltage[comps[i].net2->idx][cSize] = comps[i].amplitude;
-				continue;
+    for(j=0;j<nFreq;j++){
+    	printf("%g Hz \n",freqs[j] );
+    }
+
+    for(i=0;i<nFreq; i++){
+    	for(j=i+1;j<nFreq; j++){
+    		if(freqs[j] < freqs[i]){
+    			int temp = freqs[j];
+    			freqs[j] = freqs[i];
+    			freqs[i] = temp;
+    		}
+    	}
+    }
+
+    for(j=0;j<nFreq;j++){
+    	printf("%g Hz \n",freqs[j] );
+    }
+
+    int k;
+    for(k=0;k<nFreq;k++){
+    	// coeffs = {{0.0}};
+    	int mV = 0;
+    	for(i=0; i<cSize - 1 + mVsrc; i++){
+			for(j=0;j<=cSize - 1 + mVsrc;j++){
+				coeffs[i][j] = 0.0;
+				// printf("%f + %fi     ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
 			}
-			printf("%d ",comps[i].net1->idx);
-			printf("%d ",comps[i].net2->idx );
-			printf("%f\n",comps[i].value);
-			voltage[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
-			voltage[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
+			// printf("\n");
+		}
+    	float freq = freqs[k];
+    	// printf("Evaluating at %f Hz\n", freq);
+		for(i=0; i<nSize; i++){
+			// printf("yayay %f %f\n", comps[i].frequency,freq);
+			// if(comps[i].frequency == freq) printf("yayay %f %f\n", comps[i].frequency,freq);
+			if((comps[i].type)=='r')
+				comps[i].impedence=comps[i].value;
+			else if((comps[i].type)=='i')
+				comps[i].impedence=comps[i].value*2*M_PI*freq*I;
+			else if((comps[i].type)=='c')
+				comps[i].impedence=(-1/(comps[i].value*2*M_PI*freq))*I;
+			
+			// printf("%s ", comps[i].n);
+			// printf("%c ", comps[i].type);
+			// printf("(%s ", comps[i].net1->name);
+			// printf("%d ",comps[i].net1->x);
+			// printf("%d) ",comps[i].net1->y);
+			// printf("(%s ", comps[i].net2->name);
+			// printf("%d ",comps[i].net2->x);
+			// printf("%d) ",comps[i].net2->y);
+			// printf("%g", comps[i].value);
+			// printf("%s\n", comps[i].unit);
+			// if(comps[i].type=='x'){
+			// 	coeffs[comps[i].net1->idx][cSize] = -1*comps[i].amplitude;
+			// 	coeffs[comps[i].net2->idx][cSize] = comps[i].amplitude;
+			// 	continue;
+			// }
+			// printf("%d ",comps[i].net1->idx);
+			// printf("%d ",comps[i].net2->idx );
+			// printf("%f\n",comps[i].value);
+			// coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].value;
+			// coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].value;
 
-			voltage[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
-			voltage[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+			// coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].value;
+			// coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+
+			switch(comps[i].type){
+				case 'x' :
+					if(comps[i].frequency == freq){
+						if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = -1 * comps[i].amplitude;
+						if(comps[i].net2->idx != -1) coeffs[comps[i].net2->idx][cSize-1 + mVsrc] = comps[i].amplitude;
+					} else {
+						if(comps[i].net1->idx != -1) coeffs[comps[i].net1->idx][cSize-1 + mVsrc] = 0;
+						if(comps[i].net2->idx != -1) coeffs[comps[i].net2->idx][cSize-1 + mVsrc] = 0;
+					}
+					break;
+
+				case 'v' :
+					if(comps[i].net1->idx==-1){
+						coeffs[comps[i].net2->idx][cSize-1 + mV] += 1.0;
+						coeffs[cSize-1 + mV][comps[i].net2->idx] += 1.0;
+					} else {
+						if(comps[i].net2->idx==-1){
+							coeffs[comps[i].net1->idx][cSize-1 + mV] += -1.0;
+							coeffs[cSize-1 + mV][comps[i].net1->idx] += -1.0;
+						} else {
+							coeffs[comps[i].net1->idx][cSize-1 + mV] += -1.0;
+							coeffs[comps[i].net2->idx][cSize-1 + mV] += 1.0;
+							
+							coeffs[cSize-1 + mV][comps[i].net1->idx] += -1.0;
+							coeffs[cSize-1 + mV][comps[i].net2->idx] += 1.0;
+						}
+					}
+					
+					coeffs[cSize-1 + mV][cSize-1 + mVsrc] = (comps[i].frequency == freq) ? comps[i].amplitude : 0;
+					mV++;
+					break;
+
+				case 'r' :
+				case 'i' :
+				case 'c' :
+					if(comps[i].net1->idx==-1){
+						coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].value;
+					} else {
+						if(comps[i].net2->idx==-1){
+							coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].impedence;
+						} else {
+							coeffs[comps[i].net1->idx][comps[i].net1->idx] += 1.0/comps[i].impedence;
+							coeffs[comps[i].net1->idx][comps[i].net2->idx] -= 1.0/comps[i].impedence;
+							coeffs[comps[i].net2->idx][comps[i].net1->idx] -= 1.0/comps[i].impedence;
+							coeffs[comps[i].net2->idx][comps[i].net2->idx] += 1.0/comps[i].impedence;
+						}
+					}
+					break;
+
+			}
 		}
 
-		for(i=1; i<cSize; i++){
-			for(j=1;j<=cSize;j++){
-				printf("%f ",voltage[i][j]);
+		for(i=0; i<cSize - 1 + mVsrc; i++){
+			for(j=0;j<=cSize - 1 + mVsrc;j++){
+				printf("%f + %fi     ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
 			}
 			printf("\n");
 		}
-
+		solve_matrix(freq);
+		for(i=0; i<cSize - 1 + mVsrc; i++){
+			for(j=0;j<=cSize - 1 + mVsrc;j++){
+				printf("%f + %fi     ",creal(coeffs[i][j]),cimag(coeffs[i][j]) );
+			}
+			printf("\n");
+		}
+		printf("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
 	}
-	// printf("yay57487\n");
-	solve_matrix();
 
+	// double complex c1 = 0.0;
+	// printf("%s\n", (c1==0)?"Y":"N");
 }
