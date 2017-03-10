@@ -82,7 +82,7 @@ SrcId (I|V)[0-9]*
 							 else printf("invalid input unit\n");
 						}
 
-(" ")*{SrcId}(" "+{Net}){2}(" ")+"SINE"(" ")+\((" "+{Digit}("K")?)(" "+{Digit}){2}("K")?"hz"(" "+{Digit})"S"(" "+{Digit})?(" ")\)(" ")* {
+(" ")*{SrcId}(" "+{Net}){2}(" ")+"SINE"(" ")+\((" "+{Digit}("K")?)(" "+{Digit}){2}("K")?("h"|"H")"z"(" "+{Digit})"S"(" "+{Digit})?(" ")\)(" ")* {
 							int i=0,count=0;
 							while(yytext[i]!=' ')
 							{
